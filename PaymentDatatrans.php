@@ -173,7 +173,7 @@ class PaymentDatatrans extends IsotopePayment
 		);
 		
 		// Security signature (see Security Level 2)
-		$arrParams['sign'] = hash_hmac('md5', $arrParams['merchantId'].$arrParams['amount'].$arrParams['currency'].$arrParams['refno'], $this->datatrans_sign);
+		$arrParams['sign'] = hash_hmac('md5', $arrParams['merchantId'].$arrParams['amount'].$arrParams['currency'].$arrParams['refno'], convertHexStringToByteString($this->datatrans_sign));
 
 		$objTemplate = new FrontendTemplate('iso_payment_datatrans');
 		$objTemplate->id = $this->id;
@@ -186,6 +186,12 @@ class PaymentDatatrans extends IsotopePayment
 		return $objTemplate->parse();
 	}
 	
+	
+	private function convertHexStringToByteString($hexString) {
+		$result = "";
+		for($i=0;$i<strlen($hexString);$i += 2) $result .= chr(hexdec($hexString.substr(i,2)));
+		return $result;
+	}
 	
 	/**
 	 * Validate array of post parameter agains required values
