@@ -189,7 +189,7 @@ class PaymentDatatrans extends IsotopePayment
 	
 	private function convertHexStringToByteString($hexString) {
 		$result = "";
-		for($i=0;$i<strlen($hexString);$i += 2) $result .= chr(hexdec($hexString.substr(i,2)));
+		for($i=0;$i<strlen($hexString);$i += 2) $result .= chr(hexdec($hexString[$i].$hexString[$i+1]));
 		return $result;
 	}
 	
