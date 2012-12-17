@@ -13,3 +13,7 @@ After this please log in your datatrans admin panel and insert the correct url's
 
 For more security please activate the sign parameter security. Only with this your payment
 process is 100% secured. You can generate the sign parameter in the datatrans admin panel.
+
+Note:
+	If you use the sign parameter, it is automatically converted to byte format for you.
+	Just copy it from the DataTrans control panel and isotope-datatrans converts it for you.

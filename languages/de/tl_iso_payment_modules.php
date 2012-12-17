@@ -33,5 +33,5 @@
  * Fields
  */
 $GLOBALS['TL_LANG']['tl_iso_payment_modules']['datatrans_id']	= array('Merchant-ID', 'Bitte geben Sie ihre Datatrans Merchant-ID ein.');
-$GLOBALS['TL_LANG']['tl_iso_payment_modules']['datatrans_sign']	= array('HMAC-Schlüssel', 'Bitte geben Sie den HMAC-Schlüssel aus Ihrem Datatrans Control Panel ein.');
+$GLOBALS['TL_LANG']['tl_iso_payment_modules']['datatrans_sign']	= array('HMAC-Schlüssel', 'Bitte geben Sie den HMAC-Schlüssel aus Ihrem Datatrans Control Panel ein (wie dort angezeigt, er wird automatisch konvertiert).');
 
