@@ -63,8 +63,8 @@ class PaymentDatatrans extends IsotopePayment
 		}
 
 		// Validate HMAC sign
-		if ($this->Input->post('sign2') != hash_hmac('md5', $this->datatrans_id.$this->Input->post('amount').$this->Input->post('currency').$this->Input->post('uppTransactionId'), $this->datatrans_sign))
-		{
+        if ($this->Input->post('sign2') != hash_hmac('md5', $this->datatrans_id.$this->Input->post('amount').$this->Input->post('currency').$this->Input->post('uppTransactionId'), $this->convertHexStringToByteString($this->datatrans_sign)))
+        {
 			$this->log('Invalid HMAC signature for Order ID ' . $this->Input->post('refno'), __METHOD__, TL_ERROR);
 			return false;
 		}
