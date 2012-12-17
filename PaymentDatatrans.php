@@ -63,8 +63,8 @@ class PaymentDatatrans extends IsotopePayment
 		}
 
 		// Validate HMAC sign
-		if ($this->Input->post('sign2') != hash_hmac('md5', $this->datatrans_id.$this->Input->post('amount').$this->Input->post('currency').$this->Input->post('uppTransactionId'), $this->datatrans_sign))
-		{
+        if ($this->Input->post('sign2') != hash_hmac('md5', $this->datatrans_id.$this->Input->post('amount').$this->Input->post('currency').$this->Input->post('uppTransactionId'), $this->convertHexStringToByteString($this->datatrans_sign)))
+        {
 			$this->log('Invalid HMAC signature for Order ID ' . $this->Input->post('refno'), __METHOD__, TL_ERROR);
 			return false;
 		}
@@ -173,7 +173,7 @@ class PaymentDatatrans extends IsotopePayment
 		);
 		
 		// Security signature (see Security Level 2)
-		$arrParams['sign'] = hash_hmac('md5', $arrParams['merchantId'].$arrParams['amount'].$arrParams['currency'].$arrParams['refno'], $this->datatrans_sign);
+		$arrParams['sign'] = hash_hmac('md5', $arrParams['merchantId'].$arrParams['amount'].$arrParams['currency'].$arrParams['refno'], $this->convertHexStringToByteString($this->datatrans_sign));
 
 		$objTemplate = new FrontendTemplate('iso_payment_datatrans');
 		$objTemplate->id = $this->id;
@@ -185,7 +185,17 @@ class PaymentDatatrans extends IsotopePayment
 
 		return $objTemplate->parse();
 	}
-	
+
+	/**
+	 * Converts the sign key from the hex format you get from the Datatrans interface to the byte format that is needed to actually hash transaction requests
+	 * @param $hexString String The sign key from the datatrans interface
+	 * @return string The byte-formatted sign key needed as the key to hash the request parameters
+	 */
+	private function convertHexStringToByteString($hexString) {
+		$result = "";
+		for($i=0;$i<strlen($hexString);$i += 2) $result .= chr(hexdec($hexString[$i].$hexString[$i+1]));
+		return $result;
+	}
 	
 	/**
 	 * Validate array of post parameter agains required values
