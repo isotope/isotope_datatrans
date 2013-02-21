@@ -50,7 +50,7 @@ class PaymentDatatrans extends IsotopePayment
 		// Verify payment status
 		if ($this->Input->post('status') != 'success')
 		{
-			$this->log('Payment for order ID "' . $this->Input->post('refno') . '" failed.', __METHOD__, TL_ERROR);
+			$this->log('Payment for order ID "' . $this->Input->post('refno') . '" failed. -> '. $this->Input->post('status') .': '.$this->Input->post('errorMessage')."\n\nPOST: " . print_r($_POST, true), __METHOD__, TL_ERROR);
 			return false;
 		}
 		
@@ -61,9 +61,14 @@ class PaymentDatatrans extends IsotopePayment
 			$this->log('Order ID "' . $this->Input->post('refno') . '" not found', __METHOD__, TL_ERROR);
 			return false;
 		}
-
+		
+		//>@PL changed key generation
 		// Validate HMAC sign
-		if ($this->Input->post('sign2') != hash_hmac('md5', $this->datatrans_id.$this->Input->post('amount').$this->Input->post('currency').$this->Input->post('uppTransactionId'), $this->datatrans_sign))
+		//if ($this->Input->post('sign2') != hash_hmac('md5', $this->datatrans_id.$this->Input->post('amount').$this->Input->post('currency').$this->Input->post('uppTransactionId'), $this->datatrans_sign))
+		$str = $this->datatrans_id.$this->Input->post('amount').$this->Input->post('currency').$this->Input->post('uppTransactionId');
+		$key = $this->hexstr($this->datatrans_sign);
+		$h = $this->hmac($key, $str);
+		if ($this->Input->post('sign2') != $h )
 		{
 			$this->log('Invalid HMAC signature for Order ID ' . $this->Input->post('refno'), __METHOD__, TL_ERROR);
 			return false;
@@ -165,16 +170,22 @@ class PaymentDatatrans extends IsotopePayment
 			'uppCustomerZipCode'	=> $arrAddress['postal'],
 			'uppCustomerPhone'		=> $arrAddress['phone'],
 			'uppCustomerEmail'		=> $arrAddress['email'],
-			'successUrl'			=> ampersand($this->Environment->base . $this->addToUrl('step=complete', true)),
+			'successUrl'			=> ampersand($this->Environment->base . $this->addToUrl('step=complete', true) . '?uid=' . $objOrder->uniqid),
 			'errorUrl'				=> ampersand($this->Environment->base . $this->addToUrl('step=failed', true)),
-			'￼￼cancelUrl'				=> ampersand($this->Environment->base . $this->addToUrl('step=failed', true)),
+			'cancelUrl'				=> ampersand($this->Environment->base . $this->addToUrl('step=failed', true)),
 			'mod'					=> 'pay',
 			'id'					=> $this->id,
 		);
 		
+		//>@PL changed key generation
 		// Security signature (see Security Level 2)
-		$arrParams['sign'] = hash_hmac('md5', $arrParams['merchantId'].$arrParams['amount'].$arrParams['currency'].$arrParams['refno'], $this->datatrans_sign);
-
+		//$arrParams['sign'] = hash_hmac('md5', $arrParams['merchantId'].$arrParams['amount'].$arrParams['currency'].$arrParams['refno'], $this->datatrans_sign);
+		
+		$str = $arrParams['merchantId'].$arrParams['amount'].$arrParams['currency'].$arrParams['refno'];
+		$key = $this->hexstr($this->datatrans_sign);
+		$arrParams['sign'] = $this->hmac($key, $str);
+		//<@PL
+		
 		$objTemplate = new FrontendTemplate('iso_payment_datatrans');
 		$objTemplate->id = $this->id;
 		$objTemplate->action = ('https://' . ($this->debug ? 'pilot' : 'payment') . '.datatrans.biz/upp/jsp/upStart.jsp');
@@ -205,5 +216,52 @@ class PaymentDatatrans extends IsotopePayment
 		
 		return true;
 	}
+	
+	
+	
+	
+	
+	/********************************************************************/
+	/*** FUNCTIONS FOR KEY GENERATION -> signUtils.inc (Datatrans)  *****/
+	/********************************************************************/
+	
+	//>@PL include functions for datatrans key generation
+	
+	private function hexstr($hex)
+	{
+	   // translate byte array to hex string
+	   $string="";
+	   for ($i=0;$i<strlen($hex)-1;$i+=2)
+	       $string.=chr(hexdec($hex[$i].$hex[$i+1]));
+	   return $string;
+	}
+
+	private function hmac ($key, $data)
+	{
+	   // RFC 2104 HMAC implementation for php.
+	   // Creates an md5 HMAC.
+	   // Eliminates the need to install mhash to compute a HMAC
+
+	   $b = 64; // byte length for md5
+	   if (strlen($key) > $b) {
+	       $key = pack("H*",md5($key));
+	   }
+	   $key  = str_pad($key, $b, chr(0x00));
+	   $ipad = str_pad('', $b, chr(0x36));
+	   $opad = str_pad('', $b, chr(0x5c));
+	   $k_ipad = $key ^ $ipad ;
+	   $k_opad = $key ^ $opad;
+
+	   return md5($k_opad  . pack("H*",md5($k_ipad . $data)));
+	}
+
+	private function sign($key, $merchId, $amount, $ccy, $idno){
+		$str=$merchId.$amount.$ccy.$idno;
+		$key2=hexstr($key);
+		return hmac($key2, $str);
+	}
+	
+	//<@PL
+	
 }
 
